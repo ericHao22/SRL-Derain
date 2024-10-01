@@ -122,8 +122,8 @@ def main(args):
             aug_rain_image_list.append(aug_rain_image)
         print("----generate trajs----")
         action = np.zeros([1, rain_mask.shape[0], rain_mask.shape[1]])
-        for i in tqdm(range(n)):
-            for j in range(i+1, n):
+        for _ in tqdm(range(n)):
+            for _ in range(i+1, n):
                 # transition_tuple: (state_t[3, h, w], reward_brisque[1], state_t+1[3, h, w])
                 s1 = aug_rain_image_list[i].transpose([2, 0, 1])
                 s2 = aug_rain_image_list[j].transpose([2, 0, 1])
