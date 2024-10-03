@@ -1,0 +1,12 @@
+Rain12/test/input/1.png
+Rain12/test/input/10.png
+Rain12/test/input/11.png
+Rain12/test/input/12.png
+Rain12/test/input/2.png
+Rain12/test/input/3.png
+Rain12/test/input/4.png
+Rain12/test/input/5.png
+Rain12/test/input/6.png
+Rain12/test/input/7.png
+Rain12/test/input/8.png
+Rain12/test/input/9.png
