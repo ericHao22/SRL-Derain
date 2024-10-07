@@ -141,13 +141,14 @@ def main(args):
                 # s1 --> s2
                 reward_brisque = brisque_reward(brisque_metrics, s1, s2)
                 transition_tuple = (s1, reward_brisque, s2)    
-                traj = list_of_tuple_to_traj([transition_tuple])
-                trajectory_dataset.add_traj(traj)
+                forward_traj = list_of_tuple_to_traj([transition_tuple])
+
                 # s2 --> s1
                 reward_brisque = brisque_reward(brisque_metrics, s2, s1)
                 transition_tuple = (s2, reward_brisque, s1)
-                traj = list_of_tuple_to_traj([transition_tuple])
-                trajectory_dataset.add_traj(traj)
+                backward_traj = list_of_tuple_to_traj([transition_tuple])
+                
+                trajectory_dataset.add_traj_pair(forward_traj, backward_traj)
         print("----pre-training Rnet----")
         if trajectory_dataset.len() >= 2:
             r_update_num = args.N_pre
