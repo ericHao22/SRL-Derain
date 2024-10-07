@@ -36,8 +36,8 @@ def main(args):
     
     # ============= pretraining Rnet with augmented mask ==============
     n = 20
-    for i in tqdm(range(0, train_data_size)):
-        raw_x, pseudo_ys, mask, name = mini_batch_loader.load_training_data(index=i)
+    for data_idx in tqdm(range(0, train_data_size)):
+        raw_x, pseudo_ys, mask, name = mini_batch_loader.load_training_data(index=data_idx)
         if np.sum(mask) == 0: continue
         original_rainy_image = raw_x[0].transpose([1, 2, 0]) # (h, w, 3)
         rain_mask = mask[0][0] # (h, w)
@@ -50,17 +50,17 @@ def main(args):
             # random intensity of rain add to image
             p_intensity = np.random.rand(rain_mask.shape[0], rain_mask.shape[1]) * 0.5
             aug_rain_image = np.zeros_like(original_rainy_image).astype(np.float32)
-            for i in range(3):
-                aug_rain_image[:, :, i] = np.where(random_aug_mask > 0, original_rainy_image[:, :, i] + p_intensity * random_aug_mask, original_rainy_image[:, :, i])
+            for channel_idx in range(3):
+                aug_rain_image[:, :, channel_idx] = np.where(random_aug_mask > 0, original_rainy_image[:, :, channel_idx] + p_intensity * random_aug_mask, original_rainy_image[:, :, channel_idx])
             aug_rain_image = np.clip(aug_rain_image, 0, 1)
             aug_rain_image_list.append(aug_rain_image)
 
         # ============= gererate trajectories ==============
-        for _ in range(n):
-            for _ in range(i+1, n):
+        for s1_idx in range(n):
+            for s2_idx in range(s1_idx + 1, n):
                 # transition_tuple: (state_t[3, h, w], reward_brisque[1], state_t+1[3, h, w])
-                s1 = aug_rain_image_list[i].transpose([2, 0, 1])
-                s2 = aug_rain_image_list[j].transpose([2, 0, 1])
+                s1 = aug_rain_image_list[s1_idx].transpose([2, 0, 1])
+                s2 = aug_rain_image_list[s2_idx].transpose([2, 0, 1])
                 h, w = s1.shape[-2:]
                 # random crop s1, s2 to args.img_size
                 rand_range_h = h-args.img_size
