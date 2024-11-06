@@ -5,7 +5,7 @@ import time
 
 dataset_path = './dataset/Rain100L/test/'
 save_path = './dataset/Rain100L/test/'
-target_path = 'Pseudo_Reference_RDP_w_sampling/'
+target_path = 'Pseudo_Reference_RDP/'
 
 def make_folder(path):
    try:
@@ -42,7 +42,7 @@ def compute_similarity(rainy_image, rdp_image, j, i):
 
 ### MAIN PROCESS GOES HERE ###
 rainy_path = os.path.join(dataset_path, "input")
-rdp_path = os.path.join(dataset_path, "RDP_w_sampling")
+rdp_path = os.path.join(dataset_path, "RDP")
 rainy_folder = os.listdir(rainy_path)
 print(rainy_folder)
 print(len(rainy_folder))
