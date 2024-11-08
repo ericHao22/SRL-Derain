@@ -38,6 +38,8 @@ class MiniBatchLoader(object):
         path = path_infos[index]
         mask_path = path.replace('input', 'RDP_w_sampling')
         pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_RDP_w_sampling')[:-4]
+        # pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_LDGP')[:-4]
+        # pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_GT_Mask')[:-4]
 
         img = cv2.imread(path)
         if '.jpg' in path:
@@ -80,6 +82,8 @@ class MiniBatchLoader(object):
                 path = path_infos[index]
                 mask_path = path.replace('input', 'RDP_w_sampling')
                 pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_RDP_w_sampling')[:-4]
+                # pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_LDGP')[:-4]
+                # pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_GT_Mask')[:-4]
 
                 img = cv2.imread(path)
                 if '.jpg' in path:

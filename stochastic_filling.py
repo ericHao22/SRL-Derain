@@ -3,9 +3,11 @@ import os
 import numpy as np
 import time
 
-dataset_path = './dataset/Rain100L/test/'
-save_path = './dataset/Rain100L/test/'
+dataset_path = './dataset/Rain100L/train/'
+save_path = './dataset/Rain100L/train/'
 target_path = 'Pseudo_Reference_RDP_w_sampling/'
+# target_path = 'Pseudo_Reference_LDGP/'
+# target_path = 'Pseudo_Reference_GT_Mask/'
 
 def make_folder(path):
    try:
@@ -43,6 +45,8 @@ def compute_similarity(rainy_image, rdp_image, j, i):
 ### MAIN PROCESS GOES HERE ###
 rainy_path = os.path.join(dataset_path, "input")
 rdp_path = os.path.join(dataset_path, "RDP_w_sampling")
+# rdp_path = os.path.join(dataset_path, "LDGP")
+# rdp_path = os.path.join(dataset_path, "GT_Mask")
 rainy_folder = os.listdir(rainy_path)
 print(rainy_folder)
 print(len(rainy_folder))
