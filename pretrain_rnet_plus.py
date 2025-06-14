@@ -106,15 +106,16 @@ def main(args):
         optimizer_rnet_brisque.step()
     
     # save Rnet model
-    os.makedirs(os.path.join(args.save_dir_path, 'model_weight'), exist_ok=True)
-    torch.save(r_net_brisque.state_dict(), os.path.join(args.save_dir_path, 'model_weight', 'rnet_brisque.pt'))
+    os.makedirs(os.path.join(args.checkpoint_dir_path, 'model_weight_best'), exist_ok=True)
+    torch.save(r_net_brisque.state_dict(), os.path.join(args.checkpoint_dir_path, 'model_weight_best', 'rnet_brisque.pt'))
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='parameters for training') 
     # Directories
     parser.add_argument('--image_dir_path', type=str, default='dataset/')
-    parser.add_argument('--data_path', type=str, default='dataset/Rain100L/testing.txt')
-    parser.add_argument('--save_dir_path', type=str, default='./Results/Rain100L/test/Rnet+/')
+    parser.add_argument('--data_path', type=str, default='dataset/Rain12/testing.txt')
+    parser.add_argument('--save_dir_path', type=str, default='./Results/Rain12/test/Rnet+/')
+    parser.add_argument('--checkpoint_dir_path', type=str, default='./Checkpoints/Rain12/Rnet+/')
     # config
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--N_pre', type=int, default=6000)

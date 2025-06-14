@@ -36,8 +36,8 @@ class MiniBatchLoader(object):
     def load_data(self, path_infos, index):
         in_channels = 3
         path = path_infos[index]
-        mask_path = path.replace('input', 'RDP_w_sampling')
-        pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_RDP_w_sampling')[:-4]
+        mask_path = path.replace('input', 'RDP')
+        pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_RDP')[:-4]
 
         img = cv2.imread(path)
         if '.jpg' in path:
@@ -78,8 +78,8 @@ class MiniBatchLoader(object):
             
             for i, index in enumerate(indices):
                 path = path_infos[index]
-                mask_path = path.replace('input', 'RDP_w_sampling')
-                pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_RDP_w_sampling')[:-4]
+                mask_path = path.replace('input', 'RDP')
+                pseudo_gt_dir = path.replace('input', 'Pseudo_Reference_RDP')[:-4]
 
                 img = cv2.imread(path)
                 if '.jpg' in path:
@@ -128,7 +128,7 @@ class MiniBatchLoader(object):
         elif mini_batch_size == 1:
             for i, index in enumerate(indices):
                 path = path_infos[index]
-                mask_path = path.replace('input', 'RDP_w_sampling')
+                mask_path = path.replace('input', 'RDP')
 
                 img = cv2.imread(path)
                 if '.jpg' in path:
