@@ -1,4 +1,5 @@
 import argparse
+import json
 import chainer
 import numpy as np
 import os
@@ -11,7 +12,10 @@ from pixelwise_a3c import *
 import torch
 from utils.trajectory import list_of_tuple_to_traj
 import cv2
+import skimage.io
 from utils.compute_Rbrisque import brisque_reward
+from skimage.metrics import peak_signal_noise_ratio as psnr
+from skimage.metrics import structural_similarity as ssim
 
 def overlapped_process(raw_x, mask, agent, current_state, patch_size, stride):
     _, _, h, w = raw_x.shape
@@ -69,6 +73,50 @@ def inference(agent, raw_x, mask, name):
 def compute_diff(image1, image2):
     return np.mean(np.abs(image1 - image2))
 
+def evaluate_syn(agent, name, metrics):
+    gt_path = os.path.join(args.gt_dir_path, name)
+    result_path = os.path.join(args.save_dir_path, 'derained_result', name)
+    gt_img = cv2.imread(gt_path)
+    result_img = cv2.imread(result_path)
+    psnr_val = psnr(gt_img, result_img)
+    ssim_val = ssim(gt_img, result_img, channel_axis=2)
+    # transform2 = transforms.Compose([transforms.ToTensor()])
+    # gt_tensor = transform2(Image.open(gt_path).convert('RGB'))
+    # result_tensor = transform2(Image.open(result_path).convert('RGB'))
+    # loss_fn_alex = lpips.LPIPS(net='alex')
+    # lpips_val = loss_fn_alex(gt_tensor, result_tensor).item()
+    
+    total_old = metrics['psnr'] + metrics['ssim'] #+ metrics['lpips']
+    total_new = psnr_val + ssim_val #+ lpips_val
+
+    if total_new > total_old:
+        agent.save(os.path.join(args.checkpoint_dir_path, 'model_weight_best', name))
+        latest_metrics = {'psnr': psnr_val, 'ssim': ssim_val}
+    else:
+        latest_metrics = metrics
+
+    print(f"Image {name} metrics: PSNR {psnr_val}, SSIM {ssim_val}")
+
+    return latest_metrics
+
+def evaluate_real(agent, name, metrics):
+    result_path = os.path.join(args.save_dir_path, 'derained_result', name)
+    result_img = skimage.io.imread(result_path)
+    brisque_val = BRISQUE(url=False).score(result_img)
+    
+    total_old = metrics['brisque']
+    total_new = brisque_val
+
+    if total_new < total_old:
+        agent.save(os.path.join(args.checkpoint_dir_path, 'model_weight_best', name))
+        latest_metrics = {'brisque': brisque_val}
+    else:
+        latest_metrics = metrics
+
+    print(f"Image {name} metrics: BRISQUE {brisque_val}")
+
+    return latest_metrics
+
 def main(args):
     #_/_/_/ load dataset _/_/_/ 
     mini_batch_loader = MiniBatchLoader(
@@ -92,13 +140,21 @@ def main(args):
         agent = PixelWiseA3C_InnerState(model, optimizer, 5, args.gamma)
         agent.act_deterministically = True
         agent.model.to_gpu()
+        agent.load(os.path.join(args.checkpoint_dir_path, 'model_weight', name))
+        # agent.load(os.path.join(args.checkpoint_dir_path, 'model_weight_best', name))
         print("===== Process for {} =====".format(name))
         r_net_brisque = Reward_Predictor(image_size=(args.pretrained_img_size, args.pretrained_img_size)).cuda()
         rnet_brisque_state_dict = torch.load(os.path.join(args.rnet_weight_dir, 'rnet_brisque.pt'))
         r_net_brisque.load_state_dict(rnet_brisque_state_dict)
 
         print("----start training agent----")
-        os.makedirs(os.path.join(args.save_dir_path, 'model_weight', name), exist_ok=True)
+        os.makedirs(os.path.join(args.checkpoint_dir_path, 'model_weight_best', name), exist_ok=True)
+        metrics_path = os.path.join(args.checkpoint_dir_path, 'model_weight_best', name, 'metrics.json')
+        if os.path.exists(metrics_path):
+            with open(metrics_path, 'r') as f:
+                metrics = json.load(f)
+        else:
+            metrics = {'psnr': 0, 'ssim': 0, 'lpips': 0, 'brisque': 1000}
         for episode in tqdm(range(1, args.max_episode+1)):
             # random crop args.pretrained_img_size x args.pretrained_img_size
             img_size = args.pretrained_img_size
@@ -141,13 +197,18 @@ def main(args):
                 sum_reward += np.mean(reward)*np.power(args.gamma,t)        
             agent.stop_episode_and_train(current_state.tensor, reward, True)
             optimizer.alpha = args.lr*((1-episode/args.max_episode)**0.9)
-            agent.save(os.path.join(args.save_dir_path, 'model_weight', name))
-            
-        inference(agent, raw_x, mask, name)
+
+            if (episode + 1) % 10 == 0:
+                inference(agent, raw_x, mask, name)
+                metrics = evaluate_syn(agent, name, metrics)
+                # metrics = evaluate_real(agent, name, metrics)
+
+        with open(metrics_path, 'w') as f:
+            json.dump(metrics, f)
     
         # save Rnet model
-        os.makedirs(os.path.join(args.save_dir_path, 'model_weight', name, 'Rnet'), exist_ok=True)
-        torch.save(r_net_brisque.state_dict(), os.path.join(args.save_dir_path, 'model_weight', name, 'Rnet', 'rnet_brisque.pt'))
+        os.makedirs(os.path.join(args.checkpoint_dir_path, 'model_weight_best', name, 'Rnet'), exist_ok=True)
+        torch.save(r_net_brisque.state_dict(), os.path.join(args.checkpoint_dir_path, 'model_weight_best', name, 'Rnet', 'rnet_brisque.pt'))
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='parameters for training') 
@@ -155,9 +216,11 @@ if __name__ == '__main__':
     parser.add_argument('--random_seed', type=int, default=1)
     # Directories
     parser.add_argument('--image_dir_path', type=str, default='dataset/')
-    parser.add_argument('--data_path', type=str, default='dataset/Rain100L/testing.txt')
-    parser.add_argument('--save_dir_path', type=str, default='./Results/Rain100L/test/SRL-Derain+/')
-    parser.add_argument('--rnet_weight_dir', type=str, default='./Results/Rain100L/test/Rnet+/model_weight/')
+    parser.add_argument('--data_path', type=str, default='dataset/Rain12/testing.txt')
+    parser.add_argument('--gt_dir_path', type=str, default='dataset/Rain12/test/gt/')
+    parser.add_argument('--save_dir_path', type=str, default='./Results/Rain12/test/SRL-Derain+/')
+    parser.add_argument('--rnet_weight_dir', type=str, default='./Checkpoints/Rain12/Rnet+/model_weight_best/')
+    parser.add_argument('--checkpoint_dir_path', type=str, default='./Checkpoints/Rain12/SRL-Derain+/')
     # config
     parser.add_argument('--gpu_id', type=int, default=0)
     parser.add_argument('--move_range', type=int, default=3)
